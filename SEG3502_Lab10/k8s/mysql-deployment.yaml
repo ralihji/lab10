@@ -3,11 +3,10 @@ kind: Service
 metadata:
   name: mysql
 spec:
+  ports:
+    - port: 3306
   selector:
     app: mysql
-  ports:
-  - port: 3306
-    targetPort: 3306
   clusterIP: None
 ---
 apiVersion: apps/v1
@@ -15,24 +14,28 @@ kind: Deployment
 metadata:
   name: mysql
 spec:
-  replicas: 1
   selector:
-    matchLabels: &id001
+    matchLabels:
       app: mysql
+  strategy:
+    type: Recreate
   template:
     metadata:
-      labels: *id001
+      labels:
+        app: mysql
     spec:
       containers:
-      - name: mysql
-        image: mysql:8
-        ports:
-        - containerPort: 3306
+      - image: mysql:8
+        name: mysql
         env:
+          # Use secret in real usage
         - name: MYSQL_ROOT_PASSWORD
           value: root
         - name: MYSQL_DATABASE
           value: booksDb
+        ports:
+        - containerPort: 3306
+          name: mysql
         volumeMounts:
         - name: mysql-persistent-storage
           mountPath: /var/lib/mysql
@@ -40,5 +43,3 @@ spec:
       - name: mysql-persistent-storage
         persistentVolumeClaim:
           claimName: mysql-data
-  strategy:
-    type: Recreate

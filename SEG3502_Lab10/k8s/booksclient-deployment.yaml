@@ -2,40 +2,43 @@ apiVersion: v1
 kind: Service
 metadata:
   name: booksapp
+  labels:
+    app: booksapp
 spec:
+  type: ClusterIP
   selector:
     app: booksapp
   ports:
-  - port: 4100
-    targetPort: 80
-  type: ClusterIP
+    - protocol: TCP
+      port: 4100
+      targetPort: 80
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: booksapp
+  labels:
+    app: booksapp
 spec:
   replicas: 2
   selector:
-    matchLabels: &id001
+    matchLabels:
       app: booksapp
   template:
     metadata:
-      labels: *id001
+      labels:
+        app: booksapp
     spec:
       containers:
-      - name: booksapp
-        image: books-api-client:latest
-        ports:
-        - containerPort: 80
-        env:
-        - name: API_URL
-          value: http://localhost:8080/books-api/
-        imagePullPolicy: IfNotPresent
-        lifecycle:
-          preStop:
-            exec:
-              command:
-              - sh
-              - -c
-              - sleep 5
+        - name: booksapp
+          image: books-api-client:latest
+          imagePullPolicy: IfNotPresent
+          lifecycle:
+            preStop:
+              exec:
+                command: [ "sh", "-c", "sleep 5" ]
+          ports:
+            - containerPort: 80
+          env:
+            - name: API_URL
+              value: http://localhost:8080/books-api/

@@ -1,2 +1,8 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# Lab 10 : les scripts exécutés dans les conteneurs Linux doivent garder des fins de ligne LF,
+# même quand le dépôt est cloné sous Windows (sinon : « ./gradlew: not found »).
+*.sh    text eol=lf
+gradlew text eol=lf
+*.bat   text eol=crlf

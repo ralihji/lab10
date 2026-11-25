@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 #
-# SEG3502 Lab 7 : remplit la base de données (vide au départ) en passant par l'API REST.
+# SEG3502 Lab 7 (réutilisé au Lab 10) : remplit la base de données (vide au départ) en passant par l'API REST.
 # Ajoute 5 livres et 4 auteurs (avec leur biographie) pour tester la page « Authors ».
 #
-# Prérequis : MySQL (Docker) et le serveur Spring Boot démarrés (./gradlew bootRun).
+# Prérequis : MySQL et le serveur Spring Boot démarrés (conteneurs Docker, Docker Compose,
+#             port-forward Kubernetes ou ./gradlew bootRun).
 # Usage     : bash scripts/seed-data.sh            (API : http://localhost:8080/books-api)
 #             bash scripts/seed-data.sh --force    (ajoute les données même si la base contient déjà des livres)
 # Windows   : lancer la même commande dans Git Bash (installé avec Git).
@@ -24,7 +25,7 @@ done
 status=$(curl -s -o /dev/null -w '%{http_code}' "$API/books" || true)
 if [ "$status" != "200" ]; then
   echo "Le serveur ne répond pas sur $API (code HTTP : $status)." >&2
-  echo "Démarrez d'abord MySQL puis le serveur : cd server && ./gradlew bootRun" >&2
+  echo "Démarrez d'abord MySQL puis le serveur (par ex. : cd docker && docker compose up -d --build)" >&2
   exit 1
 fi
 
@@ -92,4 +93,4 @@ sofia=$(add_new_author "$b5" "Sofia" "Rossi" "")
 
 echo "Livres ajoutés  : ids $b1, $b2, $b3, $b4, $b5"
 echo "Auteurs ajoutés : Koredo Tablanga ($koredo), Amina Diallo ($amina), Marc Tremblay ($marc), Sofia Rossi ($sofia, sans biographie)"
-echo "Essayez la page Authors : http://localhost:4200/authors/$koredo"
+echo "Essayez la page Authors : http://localhost:4100/authors/$koredo (client conteneurisé)"

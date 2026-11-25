@@ -2,57 +2,63 @@ apiVersion: v1
 kind: Service
 metadata:
   name: booksserver
+  labels:
+    app: booksserver
 spec:
+  type: ClusterIP
   selector:
     app: booksserver
   ports:
-  - port: 8080
-    targetPort: 8080
-  type: ClusterIP
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: booksserver
+  labels:
+    app: booksserver
 spec:
+  # Le YAML de l'énoncé affiche 1, mais le texte (p. 15) et la démonstration de réplication (p. 17)
+  # parlent de deux pods booksserver : on en déploie donc deux.
   replicas: 2
   selector:
-    matchLabels: &id001
+    matchLabels:
       app: booksserver
   template:
     metadata:
-      labels: *id001
+      labels:
+        app: booksserver
     spec:
-      containers:
-      - name: booksserver
-        image: books-rest-api:latest
-        ports:
-        - containerPort: 8080
-        env:
-        - name: MYSQL_DB
-          value: booksDb
-        - name: MYSQL_HOST
-          value: mysql
-        - name: MYSQL_PASSWORD
-          value: root
-        - name: MYSQL_USER
-          value: root
-        imagePullPolicy: IfNotPresent
-        lifecycle:
-          preStop:
-            exec:
-              command:
-              - sh
-              - -c
-              - sleep 5
-        readinessProbe:
-          tcpSocket:
-            port: 8080
-          periodSeconds: 5
+      # Ajout : attend que MySQL accepte les connexions avant de démarrer Spring Boot
+      # (sinon le serveur échoue au démarrage et Kubernetes doit le redémarrer plusieurs fois).
       initContainers:
-      - name: wait-for-mysql
-        image: mysql:8
-        command:
-        - sh
-        - -c
-        - until mysql -h mysql -uroot -proot -e "SELECT 1" booksDb; do sleep 3; done
+        - name: wait-for-mysql
+          image: mysql:8
+          imagePullPolicy: IfNotPresent
+          command: [ "sh", "-c", "until mysql -h mysql -uroot -proot -e 'SELECT 1' booksDb; do sleep 3; done" ]
+      containers:
+        - name: booksserver
+          image: books-rest-api:latest
+          imagePullPolicy: IfNotPresent
+          lifecycle:
+            preStop:
+              exec:
+                command: [ "sh", "-c", "sleep 5" ]
+          ports:
+            - containerPort: 8080
+          # Ajout : le pod n'est déclaré prêt (READY 1/1) que lorsque le port 8080 répond
+          readinessProbe:
+            tcpSocket:
+              port: 8080
+            periodSeconds: 5
+          env:
+            - name: MYSQL_DB
+              value: booksDb
+            - name: MYSQL_HOST
+              value: mysql
+            - name: MYSQL_PASSWORD
+              value: root
+            - name: MYSQL_USER
+              value: root

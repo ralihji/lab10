@@ -1,9 +1,14 @@
-FROM gradle:8.0-jdk17 AS build
+# build application
+FROM gradle:jdk21-alpine AS build
 WORKDIR /workspace
 COPY . .
-RUN chmod +x gradlew && ./gradlew bootJar --no-daemon
-FROM eclipse-temurin:17-jre
+RUN chmod +x gradlew
+# Retire les fins de ligne Windows (CRLF) du script gradlew, sinon Linux ne peut pas l'exécuter
+RUN sed -i 's/\r$//' gradlew
+RUN ./gradlew bootJar --no-daemon
+# setup image
+FROM eclipse-temurin:21-jdk-alpine
 EXPOSE 8080
-WORKDIR /app
+RUN mkdir /app
 COPY --from=build /workspace/build/libs/*.jar /app/app.jar
-ENTRYPOINT ["java", "-jar", "/app/app.jar"]
+ENTRYPOINT ["java", "-jar","/app/app.jar"]

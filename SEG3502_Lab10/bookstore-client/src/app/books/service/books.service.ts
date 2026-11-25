@@ -11,8 +11,16 @@ import {AuthorDetails, AuthorResource, BioResource, toAuthorDetails} from '../..
   providedIn: 'root'
 })
 export class BooksService {
-  private readonly Url = (window as Window & { env?: { apiUrl: string } }).env?.apiUrl ?? 'http://localhost:8080/books-api/';
+  // Lab 10 : l'URL de l'API est lue dans window.env (chargé depuis /assets/env.json par main.ts).
+  // Dans le conteneur, entrypoint.sh remplace env.json à partir de la variable API_URL.
+  // Avec « npm start » (hors Docker), env.json contient encore PLACEHOLDER : on garde l'URL locale.
+  private readonly Url = BooksService.apiUrl();
   private http: HttpClient = inject(HttpClient);
+
+  private static apiUrl(): string {
+    const url = (window as { [key: string]: any })['env']?.apiUrl;
+    return url && url !== 'PLACEHOLDER' ? url : 'http://localhost:8080/books-api/';
+  }
 
   public getBook(id: string): Observable<Book> {
     return this.http.get<Book>(this.Url + 'books/' + id);
