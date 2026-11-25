@@ -1,0 +1,82 @@
+@switch (status) {
+  @case ('loading') {
+    <div class="state-loading" role="status">
+      <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+      <span>{{ message }}</span>
+    </div>
+  }
+
+  @case ('found') {
+    @if (author) {
+      <article class="card author-card">
+        <header class="card-header author-header">
+          <span class="author-badge">Author #{{ author.id }}</span>
+          <h3 class="author-name">{{ fullName || 'Unnamed author' }}</h3>
+        </header>
+
+        <div class="card-body">
+          <dl class="row author-info">
+            <dt class="col-4">First name</dt>
+            <dd class="col-8">{{ author.firstName || 'Not provided' }}</dd>
+            <dt class="col-4">Last name</dt>
+            <dd class="col-8">{{ author.lastName || 'Not provided' }}</dd>
+          </dl>
+
+          <h4 class="section-title">
+            Books <span class="badge rounded-pill text-bg-light">{{ author.books.length }}</span>
+          </h4>
+          @if (author.books.length > 0) {
+            <ul class="list-group book-list">
+              @for (book of author.books; track $index) {
+                <li class="list-group-item">
+                  @if (book.id !== null) {
+                    <a class="book-link" [routerLink]="['/books', book.id]">{{ book.title }}</a>
+                    <span class="book-id">Book #{{ book.id }}</span>
+                  } @else {
+                    <span>{{ book.title }}</span>
+                  }
+                </li>
+              }
+            </ul>
+          } @else {
+            <p class="text-muted fst-italic">No books for this author yet.</p>
+          }
+
+          <h4 class="section-title">Biography</h4>
+          @switch (bioStatus) {
+            @case ('loading') {
+              <p class="bio text-muted"><span class="spinner-border spinner-border-sm" aria-hidden="true"></span> Loading biography…</p>
+            }
+            @case ('loaded') {
+              <p class="bio">{{ biography }}</p>
+            }
+            @case ('empty') {
+              <p class="bio text-muted fst-italic">No biography available.</p>
+            }
+            @case ('unavailable') {
+              <p class="bio text-danger">The biography could not be loaded.</p>
+            }
+          }
+        </div>
+      </article>
+    }
+  }
+
+  @case ('not-found') {
+    <div class="alert alert-warning author-alert" role="alert">
+      <strong>Author not found.</strong> {{ message }}
+    </div>
+  }
+
+  @case ('invalid-id') {
+    <div class="alert alert-danger author-alert" role="alert">
+      <strong>Invalid id.</strong> {{ message }}
+    </div>
+  }
+
+  @default {
+    <div class="alert alert-danger author-alert" role="alert">
+      <strong>Server problem.</strong> {{ message }}
+    </div>
+  }
+}

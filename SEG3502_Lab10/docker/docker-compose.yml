@@ -1,0 +1,39 @@
+services:
+  mysql:
+    image: mysql:9
+    volumes: [mysql-data:/var/lib/mysql]
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: booksDb
+    networks: [mysql-network]
+    healthcheck:
+      test: [CMD, mysql, --user=root, --password=root, --execute, 'SHOW DATABASES;']
+      interval: 30s
+      timeout: 10s
+      retries: 10
+    ports: ['3306:3306']
+  booksserver:
+    build: ../books-rest-api
+    image: books-rest-api:latest
+    environment:
+      MYSQL_USER: root
+      MYSQL_PASSWORD: root
+      MYSQL_DB: booksDb
+      MYSQL_HOST: mysql
+    networks: [mysql-network]
+    ports: ['8080:8080']
+    depends_on:
+      mysql:
+        condition: service_healthy
+  booksapp:
+    build: ../bookstore-client
+    image: books-api-client:latest
+    environment:
+      API_URL: http://localhost:8080/books-api/
+    ports: ['4100:80']
+    depends_on: [mysql, booksserver]
+networks:
+  mysql-network: {}
+volumes:
+  mysql-data: {}
